@@ -1,0 +1,15 @@
+name: "producer-consumer"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.8-alpine
+
+  producer:
+    build: ./producer
+    ports:
+      - 3333:3333
+    command: npm run start
+
+  consumer:
+    build: ./consumer
+    command: npm run start
