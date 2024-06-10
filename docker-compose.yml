@@ -4,6 +4,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: "rabbitmq"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: rabbitmq-prometheus
     ports:
       - 5672:5672
       - 15672:15672
@@ -36,7 +38,46 @@ services:
       - rabbitmq_net
     depends_on:
       - rabbitmq
+  
+  grafana:
+    # https://hub.docker.com/r/grafana/grafana/tags
+    image: grafana/grafana:8.3.4
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - "rabbitmq_net"
+    volumes:
+      - rabbitmq-prometheus_grafana:/var/lib/grafana
+      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/rabbitmq.yaml
+      - ./grafana/datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yaml
+      - ./grafana/dashboards:/dashboards
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_INSTALL_PLUGINS: "flant-statusmap-panel,grafana-piechart-panel"
+      GF_SESSION_PROVIDER: "file"
+      GF_SESSION_PROVIDER_CONFIG: "/var/lib/grafana/sessions"
+      GF_SECURITY_COOKIE_SAMESITE: "none"
+    depends_on:
+      - prometheus
+
+  prometheus:
+    # https://hub.docker.com/r/prom/prometheus/tags
+    image: prom/prometheus:v2.28.1
+    container_name: prometheus
+    networks:
+      - "rabbitmq_net"
+    ports:
+      - "9090:9090"
+    volumes:
+      - rabbitmq-prometheus_prometheus:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
 networks:
   rabbitmq_net:
     driver: bridge
+
+volumes:
+  rabbitmq-prometheus_prometheus:
+  rabbitmq-prometheus_grafana:
