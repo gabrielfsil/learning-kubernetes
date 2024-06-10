@@ -8,7 +8,7 @@ QueueProvider.consume({
 
     const {to, from, subject, body} = content;
 
-    await MailProvider.send({
+    MailProvider.send({
       to: {
         name: to.name,
         email: to.email,
@@ -19,6 +19,6 @@ QueueProvider.consume({
       },
       subject,
       body,
-    });
+    }).catch(err => console.error(err));
   },
 });

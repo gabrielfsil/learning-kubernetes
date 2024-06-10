@@ -1,6 +1,11 @@
 import {Request, Response} from 'express';
 const express = require('express');
 import {QueueProvider} from '../../container/QueueProvider';
+const client = require('prom-client');
+const collectDefaultMetrics = client.collectDefaultMetrics;
+const Registry = client.Registry;
+const register = new Registry();
+collectDefaultMetrics({register});
 
 const app = express();
 
