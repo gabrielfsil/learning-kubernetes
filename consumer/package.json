@@ -2,10 +2,10 @@
   "name": "consumer",
   "version": "1.0.0",
   "description": "",
-  "main": "build/server.js",
+  "main": "build/shared/infra/worker/server.js",
   "scripts": {
     "build": "npx tsc",
-    "start": "node build/server.js",
+    "start": "node build/shared/infra/worker/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "gts lint",
     "clean": "gts clean",
@@ -13,18 +13,22 @@
     "fix": "gts fix",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
-    "posttest": "npm run lint"
+    "posttest": "npm run lint",
+    "dev": "nodemon src/shared/infra/worker/server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/node": "20.11.5",
     "gts": "^5.3.0",
-    "typescript": "~5.4.3",
-    "@types/node": "20.11.5"
+    "nodemon": "^3.1.3",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.4.3"
   },
   "dependencies": {
+    "amqplib": "^0.10.4",
     "express": "^4.19.2"
   }
 }
