@@ -92,7 +92,7 @@ services:
       - "9090:9090"
     volumes:
       - rabbitmq-prometheus_prometheus:/prometheus
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
       - rabbitmq
       - consumer
