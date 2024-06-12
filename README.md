@@ -1,10 +1,10 @@
-# Escalando Horizontamente com Kubernetes
+# Escalando Horizontalmente com Kubernetes
 
 ## Descrição da aplicação
 
 A aplicação se trata de 3 serviços: um producer, uma fila e um consumer.
 
-O producer, que é uma API que recebe uma requisição `POST` com o campo `total` no `body`. Esse total representa a quantidade de mensagens que serão adicionadas na fila.
+O producer, que é uma API que recebe uma requisição `POST` com o campo `total` no `body`. Esse total representa o número até o qual o consumer irá usar para calcular a quantidade de primos.
 
 A fila foi implementada usando RabbitMQ para gerenciar a troca de mensagens entre os serviços.
 
