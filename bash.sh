@@ -1,6 +1,6 @@
 #!/bin/bash
 
-URL="http://192.168.49.2:30000"
+URL="http://<MINIKUBE IP>:30000"
 DATA='{"total":"2000000"}'
 
 while true; do
