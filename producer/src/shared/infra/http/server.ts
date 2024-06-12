@@ -22,23 +22,12 @@ app.post(
   async (request: Request, response: Response): Promise<Response> => {
     const {total} = request.body;
 
-    for (const i of Array.from({length: Number(total)}, (v, k) => k)) {
-      QueueProvider.send({
-        queue: 'email',
-        content: {
-          to: {
-            name: `Name ${i}`,
-            email: `email${i}@email.com`,
-          },
-          from: {
-            name: 'System',
-            email: 'no-reply@system.com',
-          },
-          subject: 'Sua mensalidade vence amanhã!',
-          body: `Olá Name ${i}, tudo bem?\n\n\nEstou passando aqui para lembrar que sua mensalidade vence amanhã para evitar a cobrança de juros e multas.\n\nLembre-se de ddeixar o limite disponível no seu cartão ou entre em contato com o suporte para alterar a forma de pagamento.\n\n\nAtt.\nAlfredo`,
-        },
-      });
-    }
+    QueueProvider.send({
+      queue: 'email',
+      content: {
+        total,
+      },
+    });
 
     return response.json();
   }

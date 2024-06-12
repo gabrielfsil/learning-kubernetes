@@ -1,6 +1,5 @@
 const express = require('express');
 import {Request, Response} from 'express';
-import {MailProvider} from '../../containers/MailProvider';
 import {QueueProvider} from '../../containers/QueueProvider';
 const client = require('prom-client');
 
@@ -21,22 +20,24 @@ app.get('/metrics', async (req: Request, res: Response) => {
 QueueProvider.consume({
   queue: 'email',
   process: async msg => {
-    const content = JSON.parse(msg.content.toString());
+    const {total} = JSON.parse(msg.content.toString());
 
-    const {to, from, subject, body} = content;
+    const primes: number[] = [];
+    for (let i = 2; i < Number(total); i++) {
+      let isPrime = true;
+      for (let j = 2; j <= Math.sqrt(i); j++) {
+        if (i % j === 0) {
+          isPrime = false;
+          break;
+        }
+      }
+      if (isPrime) {
+        primes.push(i);
+      }
+    }
+    console.log(`Total primes between ${2} and ${total}: ${primes.length}`);
 
-    MailProvider.send({
-      to: {
-        name: to.name,
-        email: to.email,
-      },
-      from: {
-        name: from.name,
-        email: from.email,
-      },
-      subject,
-      body,
-    }).catch(err => console.error(err));
+    return;
   },
 });
 

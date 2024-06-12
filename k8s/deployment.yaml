@@ -5,25 +5,6 @@ metadata:
 
 ---
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-config
-  namespace: producer-consumer
-data:
-  dashboards.yml: ../grafana/dashboards.yml
-  datasource.yml: ../grafana/datasource.yml
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-config
-  namespace: producer-consumer
-data:
-  prometheus.yml: ../prometheus/prometheus.yml
-
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: rabbitmq-data
@@ -40,19 +21,6 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: rabbitmq-log
-  namespace: producer-consumer
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: grafana-storage
   namespace: producer-consumer
 spec:
   accessModes:
@@ -165,94 +133,6 @@ spec:
               cpu: "2"
 
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grafana
-  namespace: producer-consumer
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grafana
-  template:
-    metadata:
-      labels:
-        app: grafana
-    spec:
-      containers:
-        - name: grafana
-          image: grafana/grafana:8.3.4
-          ports:
-            - containerPort: 3000
-          env:
-            - name: GF_AUTH_ANONYMOUS_ENABLED
-              value: "true"
-            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
-              value: "Admin"
-            - name: GF_INSTALL_PLUGINS
-              value: "flant-statusmap-panel,grafana-piechart-panel"
-            - name: GF_SESSION_PROVIDER
-              value: "file"
-            - name: GF_SESSION_PROVIDER_CONFIG
-              value: "/var/lib/grafana/sessions"
-            - name: GF_SECURITY_COOKIE_SAMESITE
-              value: "none"
-          volumeMounts:
-            - name: grafana-storage
-              mountPath: /var/lib/grafana
-            - name: grafana-config
-              mountPath: /etc/grafana/provisioning
-              subPath: dashboards.yml
-              subPath: datasource.yml
-            - name: dashboards
-              mountPath: /dashboards
-      volumes:
-        - name: grafana-storage
-          persistentVolumeClaim:
-            claimName: grafana-storage
-        - name: grafana-config
-          configMap:
-            name: grafana-config
-        - name: dashboards
-          configMap:
-            name: grafana-config
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: prometheus
-  namespace: producer-consumer
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: prometheus
-  template:
-    metadata:
-      labels:
-        app: prometheus
-    spec:
-      containers:
-        - name: prometheus
-          image: prom/prometheus:v2.28.1
-          ports:
-            - containerPort: 9090
-          volumeMounts:
-            - name: prometheus-storage
-              mountPath: /prometheus
-            - name: prometheus-config
-              mountPath: /etc/prometheus/prometheus.yml
-      volumes:
-        - name: prometheus-storage
-          persistentVolumeClaim:
-            claimName: prometheus-storage
-        - name: prometheus-config
-          configMap:
-            name: prometheus-config
-
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -276,7 +156,7 @@ metadata:
   name: producer
   namespace: producer-consumer
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
     - protocol: TCP
       port: 80
@@ -292,36 +172,52 @@ metadata:
   name: consumer
   namespace: producer-consumer
 spec:
+  type: LoadBalancer
   ports:
     - port: 3334
       targetPort: 3334
+      nodePort: 30001
   selector:
     app: consumer
 
 ---
-apiVersion: v1
-kind: Service
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
 metadata:
-  name: grafana
+  name: producer
   namespace: producer-consumer
 spec:
-  type: NodePort
-  ports:
-    - port: 3000
-      targetPort: 3000
-      nodePort: 32000
-  selector:
-    app: grafana
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: producer
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 30
 
 ---
-apiVersion: v1
-kind: Service
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
 metadata:
-  name: prometheus
+  name: consumer
   namespace: producer-consumer
 spec:
-  ports:
-    - port: 9090
-      targetPort: 9090
-  selector:
-    app: prometheus
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: consumer
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 30
